@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>JobWatch Pro — Subscribe</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f5f7fb;margin:0;padding:40px 16px}
+    .card{max-width:520px;margin:auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 4px 20px #0001}
+    h1{margin-top:0}.muted{color:#6b7280}.price{font-size:30px;font-weight:700;margin:20px 0}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>JobWatch Pro</h1>
+    <p class="muted">Advanced job monitoring, up to 25 watches, and faster checks.</p>
+    <div class="price">$9.99 / month</div>
+    <div id="paypal-button-container-P-2VN53204T56286612NK2SE7Q"></div>
+  </div>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAz3yFI1S1qRkK52Ee__ZFXQm49afBno_KY5al1TQUbekvrt41rKoNotSr4QVwI5AzWM22YfHolcfNoGM&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+  <script>
+    const installId = new URLSearchParams(location.search).get('install_id') || '';
+    paypal.Buttons({
+      style:{shape:'pill',color:'blue',layout:'vertical',label:'subscribe'},
+      createSubscription:function(data,actions){
+        return actions.subscription.create({plan_id:'P-2VN53204T56286612NK2SE7Q'});
+      },
+      onApprove:function(data){
+        alert('Subscription created successfully. Your JobWatch Pro access will be activated after payment verification. Subscription ID: ' + data.subscriptionID);
+      }
+    }).render('#paypal-button-container-P-2VN53204T56286612NK2SE7Q');
+  </script>
+</body>
+</html>
