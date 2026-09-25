@@ -1,35 +1,262 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+
   <title>JobWatch Pro — Subscribe</title>
+
   <style>
-    body{font-family:Arial,sans-serif;background:#f5f7fb;margin:0;padding:40px 16px}
-    .card{max-width:520px;margin:auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 4px 20px #0001}
-    h1{margin-top:0}.muted{color:#6b7280}.price{font-size:30px;font-weight:700;margin:20px 0}
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 40px 16px;
+      color: #111827;
+    }
+
+    .card {
+      max-width: 520px;
+      margin: auto;
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 4px 20px #0001;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .price {
+      font-size: 30px;
+      font-weight: 700;
+      margin: 20px 0;
+    }
+
+    .status {
+      display: none;
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 10px;
+      line-height: 1.4;
+    }
+
+    .success {
+      background: #ecfdf5;
+      color: #065f46;
+    }
+
+    .error {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .loading {
+      background: #eff6ff;
+      color: #1e40af;
+    }
   </style>
 </head>
+
 <body>
+
   <div class="card">
+
     <h1>JobWatch Pro</h1>
-    <p class="muted">Advanced job monitoring, up to 25 watches, and faster checks.</p>
-    <div class="price">$9.99 / month</div>
-    <div id="paypal-button-container-P-2VN53204T56286612NK2SE7Q"></div>
+
+    <p class="muted">
+      Advanced job monitoring, up to 25 watches,
+      and faster job listing alerts.
+    </p>
+
+    <div class="price">
+      $9.99 / month
+    </div>
+
+    <div id="paypal-button-container"></div>
+
+    <div id="status" class="status"></div>
+
   </div>
 
-  <script src="https://www.paypal.com/sdk/js?client-id=BAAz3yFI1S1qRkK52Ee__ZFXQm49afBno_KY5al1TQUbekvrt41rKoNotSr4QVwI5AzWM22YfHolcfNoGM&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
-  <script>
-    const installId = new URLSearchParams(location.search).get('install_id') || '';
-    paypal.Buttons({
-      style:{shape:'pill',color:'blue',layout:'vertical',label:'subscribe'},
-      createSubscription:function(data,actions){
-        return actions.subscription.create({plan_id:'P-2VN53204T56286612NK2SE7Q'});
-      },
-      onApprove:function(data){
-        alert('Subscription created successfully. Your JobWatch Pro access will be activated after payment verification. Subscription ID: ' + data.subscriptionID);
-      }
-    }).render('#paypal-button-container-P-2VN53204T56286612NK2SE7Q');
+  <!-- PayPal SDK -->
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=BAAz3yFI1S1qRkK52Ee__ZFXQm49afBno_KY5al1TQUbekvrt41rKoNotSr4QVwI5AzWM22YfHolcfNoGM&vault=true&intent=subscription"
+    data-sdk-integration-source="button-factory">
   </script>
+
+  <script>
+
+    // --------------------------------------------------
+    // JobWatch configuration
+    // --------------------------------------------------
+
+    const PLAN_ID = "P-2VN53204T56286612NK2SE7Q";
+
+    const BACKEND_URL =
+      "https://jobwatch-backend-d9ud.onrender.com";
+
+
+    // --------------------------------------------------
+    // Get installation ID
+    // --------------------------------------------------
+
+    const params = new URLSearchParams(window.location.search);
+
+    let installId = params.get("install_id");
+
+
+    // --------------------------------------------------
+    // Status message helper
+    // --------------------------------------------------
+
+    function showStatus(message, type) {
+
+      const status = document.getElementById("status");
+
+      status.textContent = message;
+
+      status.className = "status " + type;
+
+      status.style.display = "block";
+    }
+
+
+    // --------------------------------------------------
+    // PayPal subscription button
+    // --------------------------------------------------
+
+    paypal.Buttons({
+
+      style: {
+        shape: "pill",
+        color: "blue",
+        layout: "vertical",
+        label: "subscribe"
+      },
+
+
+      // Create the PayPal subscription
+      createSubscription: function(data, actions) {
+
+        return actions.subscription.create({
+          plan_id: PLAN_ID
+        });
+
+      },
+
+
+      // PayPal approved the subscription
+      onApprove: async function(data) {
+
+        showStatus(
+          "Payment approved. Verifying your JobWatch Pro subscription...",
+          "loading"
+        );
+
+
+        // Make sure we have an installation ID
+        if (!installId) {
+
+          showStatus(
+            "Payment was approved, but no JobWatch installation ID was provided. Please open this page from the JobWatch extension.",
+            "error"
+          );
+
+          return;
+        }
+
+
+        try {
+
+          // Send the PayPal subscription ID
+          // to our secure backend.
+          const response = await fetch(
+            BACKEND_URL + "/api/activate",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type": "application/json"
+              },
+
+              body: JSON.stringify({
+                install_id: installId,
+                subscription_id: data.subscriptionID
+              })
+            }
+          );
+
+
+          const result = await response.json();
+
+
+          // Backend successfully verified PayPal
+          if (response.ok && result.pro === true) {
+
+            showStatus(
+              "🎉 JobWatch Pro is now activated! You can close this page and return to the extension.",
+              "success"
+            );
+
+            return;
+          }
+
+
+          // Backend rejected activation
+          showStatus(
+            result.error ||
+            "Payment was approved, but JobWatch Pro could not be activated yet.",
+            "error"
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Activation request failed:",
+            error
+          );
+
+          showStatus(
+            "Payment was approved, but we could not reach the JobWatch server. Please try again shortly.",
+            "error"
+          );
+
+        }
+
+      },
+
+
+      // PayPal error
+      onError: function(error) {
+
+        console.error(
+          "PayPal error:",
+          error
+        );
+
+        showStatus(
+          "PayPal could not complete the subscription. Please try again.",
+          "error"
+        );
+
+      }
+
+    }).render("#paypal-button-container");
+
+  </script>
+
 </body>
 </html>
